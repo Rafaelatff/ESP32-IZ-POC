@@ -42,7 +42,79 @@ The functions are:
 * `static esp_err_t register_peer(uint8_t *peer_addr)` - Function used to register the Peers in the network.
 * `static esp_err_t esp_now_send_data(const uint8_t *peer_addr, const uint8_t *data, uint8_t len)` - Function used to send data over the network.
 * `void send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)` - Callback function to LOGI the sent data.
-* `void recv_cb(const esp_now_recv_info_t * esp_now_info, const uint8_t *data, int data_len)` - Callback function to treat the received information. 
+* `void recv_cb(const esp_now_recv_info_t * esp_now_info, const uint8_t *data, int data_len)` - Callback function to treat the received information.
+
+## Uart connection (test for gateway)
+
+Before going to the gateway firmware, I run a small test. I created a python to send data through the UART (USB) connection and created a firmware to interpretate this data, similar to my first code running the ESP NOW protocol.
+
+```py
+import serial
+import time
+
+ser = serial.Serial('COM5', 115200, timeout=1)  # Substitua 'COMx' pela porta do seu ESP32
+
+while True:
+    dados = input()
+    ser.write(dados.encode())
+    time.sleep(1)
+```
+Then I created a firmware that I flashed to the ESP memory:
+
+```c
+#include <driver/gpio.h>
+#include "driver/uart.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/Task.h"
+
+void uart_config(){
+    const uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+    };
+
+    uart_param_config(UART_NUM_1, &uart_config);
+    uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    uart_driver_install(UART_NUM_1, 256, 0, 0, NULL, 0);
+}
+
+void app_main(void)
+{
+    gpio_set_direction(GPIO_NUM_2,GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_NUM_2,1); // To test - GPIO2 is connected to the anode of blue led.
+
+    uart_config();
+
+    while(1){
+        uint8_t data[20];
+        int len = uart_read_bytes(UART_NUM_1, data, sizeof(data), 20 / portTICK_PERIOD_MS);
+        if (len > 0) {
+            printf("Recebido: %.*s\n", len, data);
+        }
+
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        
+        uint8_t value = atoi((char *) data);
+        if(value == 1){
+            gpio_set_level(BLUE_LED,1);
+        }
+        else{
+            gpio_set_level(BLUE_LED,0);
+        }
+}
+```
+Then I split my Terminal, so I could have two terminals, one for bulding and flashing the ESP board and another to run my python code.
+![image](https://github.com/Rafaelatff/ESP32-IZ-POC/assets/58916022/8225e303-d80b-4cb9-bf39-17704a0bcf4e)
+
+To run my python code, I just entered my main folder by `cd main` and then run `python envia_dados.py`.
+![image](https://github.com/Rafaelatff/ESP32-IZ-POC/assets/58916022/299e27c6-f533-4c2c-abfa-b9cafd047cb9)
+
+As results:
+
+![WhatsApp Video 2023-11-15 at 22 24 59](https://github.com/Rafaelatff/ESP32-IZ-POC/assets/58916022/98689282-1f5a-4888-ab81-3d47d8a9e920)
 
 ## Green board (Gateway)
 
