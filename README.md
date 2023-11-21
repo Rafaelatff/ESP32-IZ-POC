@@ -44,6 +44,37 @@ The functions are:
 * `void send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)` - Callback function to LOGI the sent data.
 * `void recv_cb(const esp_now_recv_info_t * esp_now_info, const uint8_t *data, int data_len)` - Callback function to treat the received information.
 
+I did a small change on the `register_peer(uint8_t *peer_addr)` function. In order to register different peers I: 
+
+```c
+static esp_err_t register_peer(uint8_t *peer_addr){
+    esp_now_peer_info_t esp_now_peer_info = {};
+    memcpy(esp_now_peer_info.peer_addr, peer_addr, ESP_NOW_ETH_ALEN); // Changed second paramter to receive peer_addr instead of peer_mac
+    esp_now_peer_info.channel = ESP_CHANNEL;
+    esp_now_peer_info.ifidx = ESP_IF_WIFI_STA;
+
+    esp_now_add_peer(&esp_now_peer_info);
+    return ESP_OK;
+}
+```
+Then I declared all new peer (ex.: `static uint8_t Pink_SN2 [ESP_NOW_ETH_ALEN] = {0xcc, 0xdb, 0xa7, 0x69, 0xb7, 0xe4};`) and registered. To test, inside the while(1) loop I did the following:
+
+```c
+        esp_now_send_data(Blue_SN1, data_LED_ON, 32);
+        esp_now_send_data(Pink_SN2, data_LED_ON, 32);
+        esp_now_send_data(Orange_SN3, data_LED_ON, 32);
+        esp_now_send_data(Yellow_SN4, data_LED_ON, 32);
+        vTaskDelay(pdMS_TO_TICKS(1000)); // 1 sec
+         gpio_set_level(BLUE_LED,0);
+        esp_now_send_data(Broadcast, data_LED_OFF, 32); # Also have to declare Broadcast and call ESP_ERROR_CHECK(register_peer(Broadcast));
+        vTaskDelay(pdMS_TO_TICKS(1000)); // 1 sec  
+```
+
+As results:
+
+![WhatsApp Video 2023-11-20 at 22 26 42](https://github.com/Rafaelatff/ESP32-IZ-POC/assets/58916022/722ee950-5232-45c0-b3e3-43a3794fdaa7)
+
+
 ## Uart connection (test for gateway)
 
 Before going to the gateway firmware, I run a small test. I created a python to send data through the UART (USB) connection and created a firmware to interpretate this data, similar to my first code running the ESP NOW protocol.
