@@ -66,7 +66,7 @@ Then I declared all new peer (ex.: `static uint8_t Pink_SN2 [ESP_NOW_ETH_ALEN] =
         esp_now_send_data(Yellow_SN4, data_LED_ON, 32);
         vTaskDelay(pdMS_TO_TICKS(1000)); // 1 sec
          gpio_set_level(BLUE_LED,0);
-        esp_now_send_data(Broadcast, data_LED_OFF, 32); # Also have to declare Broadcast and call ESP_ERROR_CHECK(register_peer(Broadcast));
+        esp_now_send_data(Broadcast, data_LED_OFF, 32); // Also have to declare Broadcast and call ESP_ERROR_CHECK(register_peer(Broadcast));
         vTaskDelay(pdMS_TO_TICKS(1000)); // 1 sec  
 ```
 
