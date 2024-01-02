@@ -147,6 +147,36 @@ As results:
 
 ![WhatsApp Video 2023-11-15 at 22 24 59](https://github.com/Rafaelatff/ESP32-IZ-POC/assets/58916022/98689282-1f5a-4888-ab81-3d47d8a9e920)
 
+## Uart - 52 characters
+
+The ESP32 sending 52 char:
+
+```c
+const char* dados = "0122333444455555666666777777788888888999999999012233"; //52 bytes
+printf("%s\n", dados);
+```
+
+The python code receing on UART:
+
+```py
+try:
+    while True:
+        # Leia uma linha da porta serial
+        Pacote_RX = ser.read(52) # faz a leitura de 52 bytes do buffer que rec
+        bytes_em_string = Pacote_RX.decode("utf-8") # ("latin1") nao retornou 1 erro se quer
+
+        if len(Pacote_RX) >= 52:
+            print ('>=52')
+            print(bytes_em_string)
+        else:
+            print ('<52')
+```
+
+As results:
+
+![WhatsApp Image 2023-12-06 at 22 01 04_90124017](https://github.com/Rafaelatff/ESP32-IZ-POC/assets/58916022/1542e2b0-f7e0-4ba0-b16d-c9c0b96cd5b3)
+
+
 ## Green board (Gateway)
 
 ## Blue board (Sensor node 1)
